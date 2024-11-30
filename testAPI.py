@@ -44,9 +44,9 @@ def store_weather_data(weather_data):
         conn = psycopg2.connect(**db_config)
         cursor = conn.cursor()
 
-        # SQL Insert Query
+        # SQL Insert Query for new table test_weather_data
         insert_query = """
-        INSERT INTO weather_data (date, temperature, humidity, wind_speed, location, recorded_at)
+        INSERT INTO test_weather_data (date, temperature, humidity, wind_speed, location, recorded_at)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
         cursor.execute(insert_query, (
@@ -62,7 +62,7 @@ def store_weather_data(weather_data):
         conn.commit()
 
         # Check for success
-        print(f"Weather data inserted successfully!")  # Debugging line
+        print(f"Weather data inserted into test_weather_data successfully!")  # Debugging line
 
         # Close the connection
         cursor.close()
@@ -74,5 +74,5 @@ def store_weather_data(weather_data):
 # Fetch weather data
 weather_data = extract_weather_data()
 
-# Store the data in the database
+# Store the data in the new table
 store_weather_data(weather_data)

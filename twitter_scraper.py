@@ -5,7 +5,7 @@ import psycopg2
 from psycopg2 import sql
 
 # Set up Twitter API credentials 
-bearer_token = "AAAAAAAAAAAAAAAAAAAAAO8XxQEAAAAAYZHd9AjRAZBA7vwK%2BKOsLsKYPfA%3DQf2JC8B5KYkTV02pAruR3kcj9HsaFxBL3bj4Rwgv5aBH5w3Sh1"
+bearer_token = "AAAAAAAAAAAAAAAAAAAAAO8XxQEAAAAAY0T3iusuQ48s8T%2FRcfzd%2Bf5JySk%3Ds0BH9ccxmQbVfmaoceRzi7Ou1jEZSqbOSs8mmWWb6ym9UpwaLM"
 
 # Initialize the Tweepy client
 client = tweepy.Client(bearer_token=bearer_token)

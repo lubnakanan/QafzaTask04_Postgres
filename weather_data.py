@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 # API Configuration
-API_KEY = 'ae8948c438603b869d7ff9350deb65e3'
+API_KEY = 'c872d3baeb70b4b22323919b67783c4f'
 BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 CITY = 'London'
 

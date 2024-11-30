@@ -5,19 +5,19 @@ import psycopg2
 from psycopg2 import sql
 
 # Set up Twitter API credentials
-bearer_token = "AAAAAAAAAAAAAAAAAAAAAO8XxQEAAAAA04%2FRMB6n5%2B3whEAS3nlbIh4ywD8%3D6U9CHrnMKma7oDPru1naD8GWfn2vCZimocKjmbzGmDACOPd3Ff"
+api_key = "kQrqMoOrZfZV5g1TfTlSXdxty"
+api_secret = "RAlqvuQZnFSX0mVMdr0VcIUNeDbXgduze5nIDVoakKEz8XXvUF"
+access_token = "1213454150031167489-hLJGHxHFt8qykDCnzWlXs2B0H70saR"
+access_token_secret = "xn0l6duxa1gYyS29WZ6xyMsmxTCrutzIzgOcyWm0hssYr"
 
-# Initialize the Tweepy client
-client = tweepy.Client(bearer_token=bearer_token)
-
-# Function to verify the connection to the Twitter API
-def verify_authentication():
-    try:
-        user = client.get_me()  # Get the authenticated user's info
-        print(f"Authenticated as {user.data['username']}")
-    except tweepy.errors.Unauthorized as e:
-        print(f"Authorization failed: {e}")
-        exit(1)  # Exit the script if authentication fails
+# Initialize the Tweepy client with OAuth 1.0a (API Key & Secret)
+auth = tweepy.OAuth1UserHandler(
+    consumer_key=api_key, 
+    consumer_secret=api_secret, 
+    access_token=access_token, 
+    access_token_secret=access_token_secret
+)
+api = tweepy.API(auth)
 
 # Set up your query and parameters for tweet scraping
 query = "Python"  # Replace with your desired query
@@ -26,33 +26,21 @@ max_results = 100  # Adjust the number of tweets to scrape
 # Function to handle the scraping of tweets
 def scrape_tweets():
     tweets = []
-    next_token = None
+    try:
+        # Fetch tweets from the API (searching for tweets containing the query)
+        for tweet in tweepy.Cursor(api.search_tweets, q=query, lang="en", result_type="recent", tweet_mode="extended").items(max_results):
+            tweets.append(tweet)  # Add the fetched tweets to the list
+
+    except tweepy.TweepError as e:
+        print(f"Error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
     
-    while True:
-        try:
-            # Fetch tweets from the API
-            response = client.search_recent_tweets(query=query, max_results=max_results, next_token=next_token)
-            tweets.extend(response.data)  # Add the fetched tweets to the list
-            
-            # Check if there are more tweets to fetch
-            next_token = response.meta.get('next_token')
-            
-            # If no more tweets, break the loop
-            if not next_token:
-                break
-
-        except tweepy.errors.TooManyRequests as e:
-            print("Rate limit exceeded, waiting to retry...")
-            time.sleep(15 * 60)  # Wait for 15 minutes before retrying
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            break  # Exit if any other error occurs
-
     return tweets
 
 # Function to save the tweets into a DataFrame
 def create_dataframe(tweets):
-    df = pd.DataFrame([[tweet.author_id, tweet.text] for tweet in tweets], columns=['User', 'Tweet'])
+    df = pd.DataFrame([[tweet.user.id, tweet.full_text] for tweet in tweets], columns=['User', 'Tweet'])
     return df
 
 # Function to insert the tweets into PostgreSQL
@@ -82,9 +70,6 @@ def insert_tweets_to_db(df):
 
 # Main function to execute the workflow
 def main():
-    # First, verify authentication
-    verify_authentication()
-
     print("Starting tweet scraping...")
     tweets = scrape_tweets()
     print(f"Fetched {len(tweets)} tweets.")

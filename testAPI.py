@@ -35,6 +35,7 @@ def extract_weather_data():
         'location': CITY,
         'recorded_at': datetime.now()
     }
+    print(f"Extracted Data: {weather_data}")  # Debugging line
     return weather_data
 
 def store_weather_data(weather_data):
@@ -60,10 +61,12 @@ def store_weather_data(weather_data):
         # Commit the transaction
         conn.commit()
 
+        # Check for success
+        print(f"Weather data inserted successfully!")  # Debugging line
+
         # Close the connection
         cursor.close()
         conn.close()
-        print("Weather data inserted successfully!")
 
     except Exception as e:
         print(f"Error while inserting data: {e}")

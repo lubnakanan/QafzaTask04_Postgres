@@ -1,11 +1,11 @@
 import requests
-import csv
+import psycopg2
 from datetime import datetime
 
 # Your API key and endpoint
-api_key = "your_api_key"
+api_key = "c872d3baeb70b4b22323919b67783c4f"
 endpoint = "https://api.openweathermap.org/data/2.5/weather"
-city = "London,GB"
+city = "London,GB"  
 
 # Making the API request
 url = f"{endpoint}?q={city}&APPID={api_key}&units=metric"
@@ -23,11 +23,24 @@ if response.status_code == 200:
     location = data['name']
     timestamp = datetime.now()
 
-    # Write data to CSV file
-    with open('/path/to/output.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['date', 'temperature', 'humidity', 'wind_speed', 'location', 'recorded_at'])
-        writer.writerow([timestamp.date(), temperature, humidity, wind_speed, location, timestamp])
-    print("Data written to CSV.")
+    # Connect to PostgreSQL database
+    conn = psycopg2.connect(
+        host="localhost",
+        database="ml_model_data",
+        user="postgres",
+        password="yourpassword"
+    )
+    cursor = conn.cursor()
+
+    # Insert data into PostgreSQL table
+    insert_query = """
+    INSERT INTO test_weather_data (date, temperature, humidity, wind_speed, location, recorded_at)
+    VALUES (%s, %s, %s, %s, %s, %s);
+    """
+    cursor.execute(insert_query, (timestamp.date(), temperature, humidity, wind_speed, location, timestamp))
+    conn.commit()
+    print("Data inserted successfully into the database.")
+    cursor.close()
+    conn.close()
 else:
     print(f"API Call Failed with status code: {response.status_code}")

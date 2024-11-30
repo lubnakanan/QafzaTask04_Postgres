@@ -4,11 +4,11 @@ from datetime import datetime
 
 # Database connection details
 db_config = {
-    'dbname': 'ml_model_data',   # your database name
-    'user': 'postgres',          # your PostgreSQL username
-    'password': 'password',      # your PostgreSQL password
-    'host': 'localhost',         # your database host
-    'port': '5432'               # your database port (default is 5432)
+    'dbname': 'ml_model_data',   # database name
+    'user': 'postgres',          # PostgreSQL username
+    'password': 'EngLubna',      # PostgreSQL password
+    'host': 'localhost',         # database host
+    'port': '5432'               # database port (default is 5432)
 }
 
 # API Configuration
@@ -60,9 +60,14 @@ def store_weather_data(weather_data):
 
         # Commit the transaction
         conn.commit()
+        
+        # Print to verify the commit is successful
+        print("Weather data inserted successfully into test_weather_data!")
 
-        # Check for success
-        print(f"Weather data inserted into test_weather_data successfully!")  # Debugging line
+        # Check if data is actually inserted (for debugging)
+        cursor.execute("SELECT * FROM test_weather_data;")
+        rows = cursor.fetchall()
+        print(f"Inserted Data: {rows}")
 
         # Close the connection
         cursor.close()

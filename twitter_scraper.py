@@ -1,58 +1,87 @@
-import time
 import tweepy
 import pandas as pd
-from tweepy.errors import TooManyRequests
+import time
+import psycopg2
+from psycopg2 import sql
 
-# Your API keys and Bearer Token
-api_key = "lYskRO9jQOZVJTOACogq8qNvb"
-api_key_secret = "hfpaZljiNN2U1PFKYYRpULltpc7ZOHrYBc2cK50ypVpd61cPQp"
+# Set up Twitter API credentials 
 bearer_token = "AAAAAAAAAAAAAAAAAAAAAO8XxQEAAAAAYZHd9AjRAZBA7vwK%2BKOsLsKYPfA%3DQf2JC8B5KYkTV02pAruR3kcj9HsaFxBL3bj4Rwgv5aBH5w3Sh1"
 
-# Set up Tweepy client
+# Initialize the Tweepy client
 client = tweepy.Client(bearer_token=bearer_token)
 
-# Define search query
-query = "Python"  # Example query, change as needed
+# Set up your query and parameters for tweet scraping
+query = "Python"  # Replace with your desired query
+max_results = 100  # Adjust the number of tweets to scrape
 
-# Fetch tweets with rate limit handling
-tweets = []
-for tweet in tweepy.Paginator(client.search_recent_tweets, query=query, tweet_fields=["author_id", "text"]).flatten(limit=100):
+# Function to handle the scraping of tweets
+def scrape_tweets():
+    tweets = []
+    next_token = None
+    
+    while True:
+        try:
+            # Fetch tweets from the API
+            response = client.search_recent_tweets(query=query, max_results=max_results, next_token=next_token)
+            tweets.extend(response.data)  # Add the fetched tweets to the list
+            
+            # Check if there are more tweets to fetch
+            next_token = response.meta.get('next_token')
+            
+            # If no more tweets, break the loop
+            if not next_token:
+                break
+
+        except tweepy.errors.TooManyRequests as e:
+            print("Rate limit exceeded, waiting to retry...")
+            time.sleep(15 * 60)  # Wait for 15 minutes before retrying
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            break  # Exit if any other error occurs
+
+    return tweets
+
+# Function to save the tweets into a DataFrame
+def create_dataframe(tweets):
+    df = pd.DataFrame([[tweet.author_id, tweet.text] for tweet in tweets], columns=['User', 'Tweet'])
+    return df
+
+# Function to insert the tweets into PostgreSQL
+def insert_tweets_to_db(df):
     try:
-        tweets.append([tweet.author_id, tweet.text])
-    except TooManyRequests as e:
-        print("Rate limit exceeded. Waiting for 15 minutes...")
-        time.sleep(15 * 60)  # Wait for 15 minutes before retrying
-        continue
+        # Connect to your PostgreSQL database
+        conn = psycopg2.connect(dbname="ml_model_data", user="postgres", password="EngLubna", host="localhost", port="5432")
+        cursor = conn.cursor()
 
-# Create DataFrame
-df = pd.DataFrame(tweets, columns=['User', 'Tweet'])
+        # Insert tweets into the twitter_data table
+        for _, row in df.iterrows():
+            cursor.execute(
+                sql.SQL("INSERT INTO twitter_data (user_id, tweet) VALUES (%s, %s)"),
+                [row['User'], row['Tweet']]
+            )
 
-# Assuming you have already connected to PostgreSQL and set up the table
-import psycopg2
+        # Commit the transaction
+        conn.commit()
 
-# Set up connection parameters for PostgreSQL
-conn = psycopg2.connect(
-    dbname="ml_model_data",  # Database name
-    user="postgres",         # Your PostgreSQL username
-    password="EngLubna",     # Your PostgreSQL password
-    host="localhost",        # or your Docker container's IP
-    port="5432"              # Default PostgreSQL port
-)
+        # Close the connection
+        cursor.close()
+        conn.close()
+        print("Tweets inserted successfully into the database.")
 
-cursor = conn.cursor()
+    except Exception as e:
+        print(f"Error while inserting tweets into database: {e}")
 
-# Insert tweets into the table
-for index, row in df.iterrows():
-    cursor.execute("""
-        INSERT INTO twitter_data (user_id, tweet)
-        VALUES (%s, %s)
-    """, (row['User'], row['Tweet']))
+# Main function to execute the workflow
+def main():
+    print("Starting tweet scraping...")
+    tweets = scrape_tweets()
+    print(f"Fetched {len(tweets)} tweets.")
+    
+    if tweets:
+        df = create_dataframe(tweets)
+        insert_tweets_to_db(df)
+    else:
+        print("No tweets to insert.")
 
-# Commit the transaction
-conn.commit()
-
-# Close the connection
-cursor.close()
-conn.close()
-
-print("Tweets have been successfully inserted into the database.")
+if __name__ == "__main__":
+    main()

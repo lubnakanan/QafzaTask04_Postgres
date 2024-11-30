@@ -4,11 +4,20 @@ import time
 import psycopg2
 from psycopg2 import sql
 
-# Set up Twitter API credentials 
-bearer_token = "AAAAAAAAAAAAAAAAAAAAAO8XxQEAAAAAY0T3iusuQ48s8T%2FRcfzd%2Bf5JySk%3Ds0BH9ccxmQbVfmaoceRzi7Ou1jEZSqbOSs8mmWWb6ym9UpwaLM"
+# Set up Twitter API credentials
+bearer_token = "AAAAAAAAAAAAAAAAAAAAAO8XxQEAAAAAY0T3iusuQ48s8T%2FRcfzd%2Bf5JySk%3Ds0BH9ccxmQbVfmaoceRzi7Ou1jEZSqbOSs8mmWWb6ym9UpwaLM"  
 
 # Initialize the Tweepy client
 client = tweepy.Client(bearer_token=bearer_token)
+
+# Function to verify the connection to the Twitter API
+def verify_authentication():
+    try:
+        user = client.get_me()  # Get the authenticated user's info
+        print(f"Authenticated as {user.data['username']}")
+    except tweepy.errors.Unauthorized as e:
+        print(f"Authorization failed: {e}")
+        exit(1)  # Exit the script if authentication fails
 
 # Set up your query and parameters for tweet scraping
 query = "Python"  # Replace with your desired query
@@ -73,6 +82,9 @@ def insert_tweets_to_db(df):
 
 # Main function to execute the workflow
 def main():
+    # First, verify authentication
+    verify_authentication()
+
     print("Starting tweet scraping...")
     tweets = scrape_tweets()
     print(f"Fetched {len(tweets)} tweets.")

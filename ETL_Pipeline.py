@@ -79,7 +79,7 @@ def main():
     db_config = {
         'dbname': 'ml_model_data',
         'user': 'postgres',
-        'password': 'EngLubna',  
+        'password': '000000',  
         'host': 'localhost',
         'port': '5432'
     }

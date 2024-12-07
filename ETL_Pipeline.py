@@ -57,7 +57,7 @@ def load_data_to_postgres(transformed_data, db_config):
 # Error Handling & Monitoring
 def main():
     # API Configuration
-    API_KEY = 'YOUR_API_KEY'
+    API_KEY = 'c872d3baeb70b4b22323919b67783c4f'
     API_URL = 'http://api.openweathermap.org/data/2.5/weather?q=London'
 
     # Database Configuration

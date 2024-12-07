@@ -1,6 +1,7 @@
 import requests
 import psycopg2
 import pandas as pd
+import os  # For environment variables
 from datetime import datetime
 
 # Extracting Data from OpenWeatherMap API
@@ -72,16 +73,16 @@ def load_data_to_postgres(transformed_data, db_config):
 # Error Handling & Monitoring
 def main():
     # API Configuration
-    API_KEY = 'c872d3baeb70b4b22323919b67783c4f'
+    API_KEY = os.getenv('API_KEY')  # Load from environment variable
     API_URL = 'http://api.openweathermap.org/data/2.5/weather?q=London'
 
     # Database Configuration
     db_config = {
-        'dbname': 'ml_model_data',
-        'user': 'postgres',
-        'password': '000000',  
-        'host': 'localhost',
-        'port': '5432'
+        'dbname': os.getenv('DB_NAME'),  # Load from environment variable
+        'user': os.getenv('DB_USER'),   # Load from environment variable
+        'password': os.getenv('DB_PASS'),  # Load from environment variable
+        'host': os.getenv('DB_HOST'),   # Load from environment variable
+        'port': os.getenv('DB_PORT')    # Load from environment variable
     }
 
     print("Starting ETL pipeline...")

@@ -3,19 +3,20 @@ import psycopg2
 import pandas as pd
 from datetime import datetime
 
-# Step 3: Extracting Data from OpenWeatherMap API
+# Extracting Data from OpenWeatherMap API
 def extract_weather_data(api_url, api_key):
     """Extract data from the weather API."""
     try:
         response = requests.get(f"{api_url}&appid={api_key}")
         response.raise_for_status()
         data = response.json()
+        print("Data successfully extracted from the API.")
         return data
     except requests.RequestException as e:
         print(f"Error fetching data from API: {e}")
         return None
 
-# Step 4: Transforming Data
+# Transforming Data
 def transform_weather_data(data):
     """Transform raw weather data into a structured format."""
     try:
@@ -27,18 +28,25 @@ def transform_weather_data(data):
             'location': data['name'],
             'recorded_at': datetime.utcfromtimestamp(data['dt']).strftime('%Y-%m-%d %H:%M:%S')
         }
+        print("Data successfully transformed.")
         return transformed_data
     except KeyError as e:
-        print(f"Error transforming data: {e}")
+        print(f"Error transforming data: Missing key {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error during transformation: {e}")
         return None
 
-# Step 5: Loading Data into PostgreSQL
+# Loading Data into PostgreSQL
 def load_data_to_postgres(transformed_data, db_config):
     """Load transformed data into PostgreSQL."""
+    connection = None
+    cursor = None
     try:
+        print("Connecting to PostgreSQL...")
         connection = psycopg2.connect(**db_config)
         cursor = connection.cursor()
-        
+
         # Insert data into the table
         query = """
         INSERT INTO test_weather_data (date, temperature, humidity, wind_speed, location, recorded_at)
@@ -48,11 +56,18 @@ def load_data_to_postgres(transformed_data, db_config):
         
         connection.commit()
         print("Data successfully loaded into PostgreSQL!")
+    except psycopg2.OperationalError as e:
+        print(f"Operational error: {e}")
     except psycopg2.Error as e:
-        print(f"Error loading data to PostgreSQL: {e}")
+        print(f"Error interacting with PostgreSQL: {e}")
+    except Exception as e:
+        print(f"Unexpected error during data loading: {e}")
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+        print("PostgreSQL connection closed.")
 
 # Error Handling & Monitoring
 def main():
@@ -64,24 +79,26 @@ def main():
     db_config = {
         'dbname': 'ml_model_data',
         'user': 'postgres',
-        'password': 'YOUR_DB_PASSWORD',
+        'password': 'EngLubna',  
         'host': 'localhost',
         'port': '5432'
     }
 
     print("Starting ETL pipeline...")
 
-    # Extract
+    # Step 1: Extract
     raw_data = extract_weather_data(API_URL, API_KEY)
     if not raw_data:
+        print("ETL pipeline terminated at the extraction step.")
         return
 
-    # Transform
+    # Step 2: Transform
     structured_data = transform_weather_data(raw_data)
     if not structured_data:
+        print("ETL pipeline terminated at the transformation step.")
         return
 
-    # Load
+    # Step 3: Load
     load_data_to_postgres(structured_data, db_config)
 
     print("ETL pipeline completed successfully!")
